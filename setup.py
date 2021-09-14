@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-     name='piquiri',  
+     name='pyquiri',  
      version='0.1',
      scripts=['pyqTest'] ,
      author="Ingo Wald",
@@ -15,7 +15,7 @@ setuptools.setup(
      description="A first test repo for a python 'geometry queries' library",
      long_description=long_description,
    long_description_content_type="text/markdown",
-     url="https://gitlab.com/ingowald/piQuiri",
+     url="https://gitlab.com/ingowald/pyQuiri",
      packages=setuptools.find_packages(),
      classifiers=[
          "Programming Language :: Python :: 3",
