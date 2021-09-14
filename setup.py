@@ -7,15 +7,15 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-     name='dokr',  
+     name='piquiri',  
      version='0.1',
-     scripts=['dokr'] ,
-     author="Deepak Kumar",
-     author_email="deepak.kumar.iet@gmail.com",
-     description="A Docker and AWS utility package",
+     scripts=['pyqTest'] ,
+     author="Ingo Wald",
+     author_email="ingowald@gmail.com",
+     description="A first test repo for a python 'geometry queries' library",
      long_description=long_description,
    long_description_content_type="text/markdown",
-     url="https://github.com/javatechy/dokr",
+     url="https://gitlab.com/ingowald/piQuiri",
      packages=setuptools.find_packages(),
      classifiers=[
          "Programming Language :: Python :: 3",
