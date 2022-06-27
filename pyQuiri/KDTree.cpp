@@ -21,39 +21,106 @@ namespace pyq {
   KDTree::KDTree(int K)
     : K(K)
   {
-    PING;
   }
 
+  KDTree::Node::SP KDTree::buildRec(std::vector<int> &items)
+  {
+    if (items.empty()) return {};
+    
+    Box bounds(K);
+    for (auto id : items)
+      bounds.grow(coords[id]);
+    
+    if (items.size() == 1 || bounds.lower == bounds.upper) {
+      KDTree::Node::SP node = std::make_shared<KDTree::Node>();
+      node->items = items;
+      node->splitDim = -1;
+      return node;
+    }
+
+    int splitDim = widestDimension(bounds);
+    double mid = 0.5*(bounds.lower[splitDim]+bounds.upper[splitDim]);
+    int closestItem = -1;
+    double closestDist = std::numeric_limits<double>::infinity();
+    for (auto item : items) {
+      double dist = abs(coords[item][splitDim] - mid);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestItem = item;
+      }
+    }
+
+    std::vector<int> left, right, same;
+    const Coords &nodeCoords = this->coords[closestItem];
+    for (auto item : items) {
+      const Coords &coords = this->coords[item];
+      if (coords == nodeCoords)
+        same.push_back(item);
+      else if (coords[splitDim] < nodeCoords[splitDim])
+        left.push_back(item);
+      else
+        right.push_back(item);
+    }
+    items.clear();
+    
+    KDTree::Node::SP node = std::make_shared<KDTree::Node>();
+    node->splitDim = splitDim;
+    node->items    = same;
+    node->lChild   = buildRec(left);
+    node->rChild   = buildRec(right);
+    return node;
+  }
+  
   /*! build kd-tree - MUST be done before querying anything */
   void KDTree::build()
   {
-    PING;
-    is_built = true;
+    if (root)
+      // tree is already built!
+      return;
+    
+    std::vector<int> items(objects.size());
+    for (int i=0;i<objects.size();i++)
+      items[i] = i;
+    root = buildRec(items);
   }
 
-  inline bool KDTree::matches(const std::vector<double> &coords, const int idx)
+  /*! performs (exact) element search for the given coordinates and
+    returns all elemnets (in un-specified order) that match these
+    coordinates */
+  pybind11::list KDTree::find(const std::vector<double> &_coords)
   {
-    for (int i=0;i<K;i++)
-      if (this->coords[idx*K+i] != coords[i])
-        return false;
-    return true;
-  }
-
-
-  /*! performs (exact) element search for the given coordinates -
-    returns whatever object got addded at these coordinates, or
-    null if it's not in this tree */
-  pybind11::object KDTree::find(const std::vector<double> &coords)
-  {
-    if (coords.size() != K)
+    Coords queryCoords = _coords;
+    if (queryCoords.size() != K)
       throw pybind11::type_error
         ("key in KDTree::find() does not match dimensionality of tree");
     
-    for (int i=0;i<objects.size();i++)
-      if (matches(coords,i)) return objects[i];
-    throw pybind11::key_error("key not found in KDTree::find");
+    pybind11::list result;
+    if (!root)
+      throw std::runtime_error("pyQuiri::KDTree hasn't been built yet (-> kdTree.build()).");
+
+    Node::SP node = root;
+    while (node) {
+      const Coords &nodeCoords = this->coords[node->items[0]];
+      if (nodeCoords == queryCoords) {
+        for (auto item : node->items)
+          result.append(objects[item]);
+        return result;
+      } else if (queryCoords[node->splitDim] < nodeCoords[node->splitDim])
+        node = node->lChild;
+      else
+        node = node->rChild;
+    }
+    return result;
   }
     
+    /*! returns a list with (only) the values value of all poitnts within given box */
+  pybind11::list KDTree::all_values_in_range(const std::vector<double> &_lower,
+                                             const std::vector<double> &_upper)
+  {
+    PYQ_NOTIMPLEMENTED;
+  }
+  
+  
 
   /*! add a new element to this kdtree */
   void KDTree::add(const std::vector<double> &coords,
@@ -63,10 +130,11 @@ namespace pyq {
       throw pybind11::type_error
         ("key in KDTree::add() does not match dimensionality of tree");
     
-    for (auto c : coords)
-      this->coords.push_back(c);
+    this->coords.push_back(Coords(coords));
     this->objects.push_back(object);
-    is_built = false;
+    
+    // invalidate the kd-tree:
+    root = {};
   }
 
 }
