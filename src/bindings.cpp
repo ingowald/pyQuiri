@@ -19,7 +19,6 @@
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
-
 namespace pyq {
 
   struct Context {
