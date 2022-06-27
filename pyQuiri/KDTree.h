@@ -28,18 +28,31 @@ namespace pyq {
     KDTree(int K);
     
     static SP create(int K) { return std::make_shared<KDTree>(K); }
-    
+
     /*! add a new element to this kdtree */
-    void add(const double *coords, PyHandle object);
+    void add(const std::vector<double> &coords,
+             const pybind11::object    &object);
+    
+    /*! performs (exact) element search for the given coordinates -
+        returns whatever object got addded at these coordinates, or
+        null if it's not in this tree */
+    pybind11::object find(const std::vector<double> &coords);
     
     /*! build kd-tree - MUST be done before querying anything */
     void build();
-    
-    std::vector<double> coords;
-    std::vector<PyHandle> objects;
 
+  private:
+    std::vector<double>           coords;
+    std::vector<pybind11::object> objects;
+    std::vector<int>              splitDim;
+    
     /*! the number of dimensions */
     const int K;
+
+    bool matches(const std::vector<double> &coords, const int idx);
+    
+    /*! whether the tree has been built since anyting got last
+        added/removed */
     bool is_built = false;
   };
   
