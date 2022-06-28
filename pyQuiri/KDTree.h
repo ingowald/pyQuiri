@@ -28,13 +28,13 @@ namespace pyq {
       for (auto &v : coords) v = defaultValue;
     }
     Coords(const Coords &other) : coords(other.coords) {}
-    Coords(const std::vector<double> &other) : coords(other) {}
+    Coords(const std::valarray<double> &other) : coords(other) {}
     
     inline double &operator[](int i) { return coords[i]; }
     inline double  operator[](int i) const { return coords[i]; }
     inline int size() const { return (int)coords.size(); }
     
-    std::vector<double> coords;
+    std::valarray<double> coords;
   };
 
   inline void set_min(Coords &a, const Coords &b)
@@ -177,37 +177,37 @@ namespace pyq {
     /*! add a new element to this kdtree */
     // void add(const py::list &coords,
     //          const py::object    &object);
-    void add(const std::vector<double> &coords,
+    void add(const std::valarray<double> &coords,
              const py::object    &object);
     
     /*! performs (exact) element search for the given coordinates and
         returns all elemnets (in un-specified order) that match these
         coordinates */
-    py::list find(const std::vector<double> &coords);
+    py::list find(const std::valarray<double> &coords);
 
     /*! finds the closest data point to given query point, and returns
         a tuple [ point, (values) ]; the 'values' is a *list* of all
         the values that share that data point (ie, it is always a list
         even if the input data set did not contain any duplicates) */
-    std::tuple<std::vector<double>,py::list>
+    std::tuple<std::valarray<double>,py::list>
     //    py::tuple
-    findClosest(const std::vector<double> &coords, const py::kwargs &kwargs);
+    findClosest(const std::valarray<double> &coords, const py::kwargs &kwargs);
 
     /*! returns a list with all key:value pairs with the given point and radius */
-    py::list all_points_in_radius(const std::vector<double> &coords,
+    py::list all_points_in_radius(const std::valarray<double> &coords,
                                   double radius);
 
     /*! returns a list with all key:value pairs with the given box */
-    std::vector<std::pair<std::vector<double>,py::object>>
-    allPointsInRange(const std::vector<double> &lower,
-                     const std::vector<double> &upper);
+    std::vector<std::pair<std::valarray<double>,py::object>>
+    allPointsInRange(const std::valarray<double> &lower,
+                     const std::valarray<double> &upper);
     
     /*! returns a list with (only) the values value of all poitnts within given box */
-    py::list allValuesInRange(const std::vector<double> &lower,
-                              const std::vector<double> &upper);
+    py::list allValuesInRange(const std::valarray<double> &lower,
+                              const std::valarray<double> &upper);
 
     /*! returns a list with (only) the values value of all poitnts within given radius */
-    py::list all_values_in_radius(const std::vector<double> &coords,
+    py::list all_values_in_radius(const std::valarray<double> &coords,
                                         double radius);
     
     /*! build kd-tree - MUST be done before querying anything */
@@ -228,10 +228,10 @@ namespace pyq {
     /*! checks that tree is built, and throws an exception if not */
     void verifyTreeIsBuilt();
     
-    /*! converts a std::vector<double> to a Coords class, and verifies
+    /*! converts a std::valarray<double> to a Coords class, and verifies
         that this has the same dimensionality of this tree - and
         throws an exception if thi sis not the case */
-    Coords makeCheckCoords(const std::vector<double> &);
+    Coords makeCheckCoords(const std::valarray<double> &);
 
     /*! one entry per input data point, containing the coordinates of each data point */
     std::vector<Coords>     coords;
