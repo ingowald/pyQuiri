@@ -24,6 +24,14 @@ def main():
     print("########### Test query closest similar point:")
     for point in dataPoints:
         similarPoint=[x+.1 for x in point]
-        print("closest value for point "+str(similarPoint)+" = "+str(tree.findClosest(similarPoint)))
+        print("closest value for point "+str(similarPoint)+" = "+str(tree.find_closest(similarPoint)))
+    #queryBoxes=([[-10,-10],[10,10]],[[20,20],[40,40]])
+    queryBoxes=[((-10,-10),(10,10)),((20,20),(40,40))]
+    print("########### Test query of a given box (values only):")
+    for box in queryBoxes:
+        print("all_values_in_range("+str(box)+") = "+str(tree.all_values_in_range(box[0],box[1])))
+    print("########### Test query of a given box (key:value pairs):")
+    for box in queryBoxes:
+        print("all_points_in_range("+str(box)+") = "+str(tree.all_points_in_range(box[0],box[1])))
     
 main()

@@ -45,8 +45,16 @@ PYBIND11_MODULE(pyQuiri, m) {
      &pyq::KDTree::find,
      "returns a list of all the elements with given coordinates.");
   kdTree.def
-    ("findClosest",
+    ("find_closest",
      &pyq::KDTree::findClosest,
      "find closest data point(s), and return tuple [coords, (values)].");
+  kdTree.def
+    ("all_values_in_range",
+     &pyq::KDTree::allValuesInRange,
+     "finds all values in given query range (ie, in a k-dimensional box).");
+  kdTree.def
+    ("all_points_in_range",
+     &pyq::KDTree::allPointsInRange,
+     "finds all points in given query range (ie, in a k-dimensional box).");
   
 }

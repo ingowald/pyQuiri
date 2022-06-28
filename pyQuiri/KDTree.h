@@ -125,6 +125,12 @@ namespace pyq {
       : lower(lower), upper(upper)
     {}
 
+    /*! returns an N-dimensoinal, infinite box */
+    static Box infinite(int N)
+    {
+      return Box(Coords(N, -std::numeric_limits<double>::infinity()),
+                 Coords(N, +std::numeric_limits<double>::infinity()));
+    }
     void grow(const Coords &other) {
       set_min(lower,other);
       set_max(upper,other);
@@ -132,11 +138,32 @@ namespace pyq {
       
     Box including(const Coords &point) const
     { return Box(min(lower,point),max(upper,point)); }
-    
+
+    inline int size() const { return lower.size(); }
     Coords lower, upper;
   };
   inline int widestDimension(const Box &box) { return arg_max(box.upper - box.lower); }
 
+  inline bool overlaps(const Box &a, const Box &b)
+  {
+    assert(a.size() == b.size());
+    for (int i=0;i<a.size();i++)
+      if (a.lower[i] > b.upper[i] ||
+          a.upper[i] < b.lower[i])
+        return false;
+    return true;
+  }
+  
+  inline bool overlaps(const Box &a, const Coords &b)
+  {
+    assert(a.size() == b.size());
+    for (int i=0;i<a.size();i++)
+      if (a.lower[i] > b[i] ||
+          a.upper[i] < b[i])
+        return false;
+    return true;
+  }
+  
   inline std::ostream &operator<<(std::ostream &out, const Box &box)
   { out << "{" << box.lower << "," << box.upper << "}"; return out; }
   
@@ -156,7 +183,7 @@ namespace pyq {
     /*! performs (exact) element search for the given coordinates and
         returns all elemnets (in un-specified order) that match these
         coordinates */
-py::list find(const std::vector<double> &coords);
+    py::list find(const std::vector<double> &coords);
 
     /*! finds the closest data point to given query point, and returns
         a tuple [ point, (values) ]; the 'values' is a *list* of all
@@ -166,17 +193,18 @@ py::list find(const std::vector<double> &coords);
     //    py::tuple
     findClosest(const std::vector<double> &coords, const py::kwargs &kwargs);
 
-    /*! returns a list with all key:value pairs with the given box */
-    py::list all_points_in_range(const std::vector<double> &lower,
-                                       const std::vector<double> &upper);
-
     /*! returns a list with all key:value pairs with the given point and radius */
     py::list all_points_in_radius(const std::vector<double> &coords,
-                                        double radius);
+                                  double radius);
 
+    /*! returns a list with all key:value pairs with the given box */
+    std::vector<std::pair<std::vector<double>,py::object>>
+    allPointsInRange(const std::vector<double> &lower,
+                     const std::vector<double> &upper);
+    
     /*! returns a list with (only) the values value of all poitnts within given box */
-    py::list all_values_in_range(const std::vector<double> &lower,
-                                       const std::vector<double> &upper);
+    py::list allValuesInRange(const std::vector<double> &lower,
+                              const std::vector<double> &upper);
 
     /*! returns a list with (only) the values value of all poitnts within given radius */
     py::list all_values_in_radius(const std::vector<double> &coords,

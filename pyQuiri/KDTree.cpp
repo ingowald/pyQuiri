@@ -129,10 +129,107 @@ namespace pyq {
   }
     
   /*! returns a list with (only) the values value of all poitnts within given box */
-  py::list KDTree::all_values_in_range(const std::vector<double> &_lower,
-                                       const std::vector<double> &_upper)
+  py::list KDTree::allValuesInRange(const std::vector<double> &_lower,
+                                    const std::vector<double> &_upper)
   {
-    PYQ_NOTIMPLEMENTED;
+    if (objects.empty())
+      return py::list{};
+    
+    verifyTreeIsBuilt();
+    Box queryBox(makeCheckCoords(_lower),
+                 makeCheckCoords(_upper));
+    // std::vector<py::object> result;
+    py::list result;
+    
+    std::stack<std::pair<Box,Node::SP>> nodeStack;
+    nodeStack.push({Box::infinite(K),root});
+    while (!nodeStack.empty()) {
+      // pop latest from stack
+      Box subtreeBounds = nodeStack.top().first;
+      Node::SP node  = nodeStack.top().second;
+      nodeStack.pop();
+
+      // cull if not in range
+      if (!overlaps(subtreeBounds,queryBox))
+        continue;
+
+      // process node itself
+      const Coords &nodeCoords = this->coords[node->items[0]];
+      if (overlaps(queryBox,nodeCoords))
+        for (auto item : node->items)
+          result.append(this->objects[item]);
+
+      // push children
+      if (node->lChild) {
+        Box childBounds = subtreeBounds;
+        childBounds.upper[node->splitDim] = nodeCoords[node->splitDim];
+        nodeStack.push(std::pair<Box,Node::SP>{childBounds,node->lChild});
+      }
+      if (node->rChild) {
+        Box childBounds = subtreeBounds;
+        childBounds.lower[node->splitDim] = nodeCoords[node->splitDim];
+        nodeStack.push(std::pair<Box,Node::SP>{childBounds,node->rChild});
+      }
+    }
+    
+    return result;//py::cast<py::list>(result);
+  }
+
+
+  /*! returns a list with (only) the values value of all poitnts within given box */
+  std::vector<std::pair<std::vector<double>,py::object>> 
+  KDTree::allPointsInRange(const std::vector<double> &_lower,
+                                    const std::vector<double> &_upper)
+  {
+    if (objects.empty())
+      return {};//py::list{};
+    
+    verifyTreeIsBuilt();
+    Box queryBox(makeCheckCoords(_lower),
+                 makeCheckCoords(_upper));
+    // std::vector<py::object> result;
+    // py::list result;
+    std::vector<std::pair<std::vector<double>,py::object>> result;
+    
+    std::stack<std::pair<Box,Node::SP>> nodeStack;
+    nodeStack.push({Box::infinite(K),root});
+    while (!nodeStack.empty()) {
+      // pop latest from stack
+      Box subtreeBounds = nodeStack.top().first;
+      Node::SP node  = nodeStack.top().second;
+      nodeStack.pop();
+
+      // cull if not in range
+      if (!overlaps(subtreeBounds,queryBox))
+        continue;
+
+      // process node itself
+      const Coords &nodeCoords = this->coords[node->items[0]];
+      if (overlaps(queryBox,nodeCoords))
+        for (auto item : node->items) {
+          // std::vector<py::list> thisPoint;
+          // py::list thisPoint;
+          // thisPoint.append(this->coords[item]);
+          // thisPoint.append(py::cast<py::tuple>(this->objects[item]));
+          // thisPoint.push_back(py::cast<py::tuple>(this->objects[item]));
+          // result.append(py::cast<py::tuple>(thisPoint));
+          result.push_back({nodeCoords.coords,this->objects[item]});
+        }
+
+      // push children
+      if (node->lChild) {
+        Box childBounds = subtreeBounds;
+        childBounds.upper[node->splitDim] = nodeCoords[node->splitDim];
+        nodeStack.push(std::pair<Box,Node::SP>{childBounds,node->lChild});
+      }
+      if (node->rChild) {
+        Box childBounds = subtreeBounds;
+        childBounds.lower[node->splitDim] = nodeCoords[node->splitDim];
+        nodeStack.push(std::pair<Box,Node::SP>{childBounds,node->rChild});
+      }
+    }
+
+    return result;
   }
   
   
