@@ -15,12 +15,31 @@
 // ======================================================================== //
 
 #include "pyQuiri/KDTree.h"
+#include <stack>
 
 namespace pyq {
 
   KDTree::KDTree(int K)
     : K(K)
   {
+  }
+
+    /*! checks that tree is built, and throws an exception if not */
+  void KDTree::verifyTreeIsBuilt()
+  {
+    if (!root)
+      throw std::runtime_error("pyQuiri::KDTree hasn't been built yet (-> kdTree.build()).");
+  }
+
+  /*! converts a std::vector<double> to a Coords class, and verifies
+    that this has the same dimensionality of this tree - and
+    throws an exception if thi sis not the case */
+  Coords KDTree::makeCheckCoords(const std::vector<double> &_coords)
+  {
+    if (_coords.size() != K)
+      throw py::type_error
+        ("key in KDTree::find() does not match dimensionality of tree");
+    return Coords(_coords);
   }
 
   KDTree::Node::SP KDTree::buildRec(std::vector<int> &items)
@@ -85,18 +104,14 @@ namespace pyq {
   }
 
   /*! performs (exact) element search for the given coordinates and
-    returns all elemnets (in un-specified order) that match these
+    returns all elements (in un-specified order) that match these
     coordinates */
-  pybind11::list KDTree::find(const std::vector<double> &_coords)
+  py::list KDTree::find(const std::vector<double> &_coords)
   {
-    Coords queryCoords = _coords;
-    if (queryCoords.size() != K)
-      throw pybind11::type_error
-        ("key in KDTree::find() does not match dimensionality of tree");
+    verifyTreeIsBuilt();
+    const Coords queryCoords = makeCheckCoords(_coords);
     
-    pybind11::list result;
-    if (!root)
-      throw std::runtime_error("pyQuiri::KDTree hasn't been built yet (-> kdTree.build()).");
+    py::list result;
 
     Node::SP node = root;
     while (node) {
@@ -113,21 +128,75 @@ namespace pyq {
     return result;
   }
     
-    /*! returns a list with (only) the values value of all poitnts within given box */
-  pybind11::list KDTree::all_values_in_range(const std::vector<double> &_lower,
-                                             const std::vector<double> &_upper)
+  /*! returns a list with (only) the values value of all poitnts within given box */
+  py::list KDTree::all_values_in_range(const std::vector<double> &_lower,
+                                       const std::vector<double> &_upper)
   {
     PYQ_NOTIMPLEMENTED;
   }
   
   
+  /*! finds the closest data point to given query point, and returns a
+    tuple [ point, (values) ]; the 'values' is a *list* of all the
+    values that share that data point (ie, it is always a list even if
+    the input data set did not contain any duplicates) */
+  std::tuple<std::vector<double>,py::list>
+  KDTree::findClosest(const std::vector<double> &_coords,
+                      const py::kwargs &kwargs)
+  {
+    if (objects.empty())
+      return std::tuple<std::vector<double>,py::list>();
+    
+    verifyTreeIsBuilt();
+    const Coords queryCoords = makeCheckCoords(_coords);
+    
+    std::stack<std::pair<double,Node::SP>> nodeStack;
+    nodeStack.push(std::pair<double,Node::SP>{ 0.,root });
+    
+    Node::SP closestNode;
+    double   closestDist = std::numeric_limits<double>::infinity();
+    while (!nodeStack.empty()) {
+      double subTreeMinDist = nodeStack.top().first;
+      Node::SP node  = nodeStack.top().second;
+      nodeStack.pop();
+
+      if (subTreeMinDist >= closestDist)
+        continue;
+      
+      assert(node);
+      const Coords &nodeCoords = this->coords[node->items[0]];
+      double dist = distance(nodeCoords,queryCoords);
+      if (dist <= closestDist) {
+        closestDist = dist;
+        closestNode = node;
+      }
+      const double farSideMinDist = 
+        std::max(subTreeMinDist,
+                 abs(queryCoords[node->splitDim]-nodeCoords[node->splitDim]));
+      const bool queryOnLeftSide = (queryCoords[node->splitDim] < nodeCoords[node->splitDim]);
+      Node::SP closeChild = queryOnLeftSide?node->lChild:node->rChild;
+      Node::SP farChild   = queryOnLeftSide?node->rChild:node->lChild;
+      if (farChild)   nodeStack.push({farSideMinDist,farChild});
+      if (closeChild) nodeStack.push({subTreeMinDist,closeChild});
+    }
+    
+    if (!closestNode)
+      return std::tuple<std::vector<double>,py::list>();
+    
+    const Coords &foundCoords = this->coords[closestNode->items[0]];
+    py::list values;
+    for (auto item : closestNode->items)
+      values.append(this->objects[item]);
+    
+    return std::tuple<std::vector<double>,py::list>(foundCoords.coords,values);
+  }
 
   /*! add a new element to this kdtree */
   void KDTree::add(const std::vector<double> &coords,
-                   const pybind11::object    &object)
+                   const py::object    &object)
   {
     if (coords.size() != K)
-      throw pybind11::type_error
+      throw py::type_error
         ("key in KDTree::add() does not match dimensionality of tree");
     
     this->coords.push_back(Coords(coords));

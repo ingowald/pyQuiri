@@ -1,7 +1,7 @@
-# pyQuiry (as in "Daiquiri") - A Module for Fast Python Primitive Range/Proximity Queries
+# pyQuiry (as in "Daiquiri") - A Module for Python Primitive Range/Proximity/kNN/etc Queries
 
 This is a first test repo for a library that will do (reasonably)
-fast primitmive/proximity queries (such as k-nearest neighbors)
+fast primitive/proximity queries (such as k-nearest neighbors)
 in python.
 
 

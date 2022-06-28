@@ -18,11 +18,6 @@
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
-void kdtree();
-
-namespace pyq {
-}
-
 PYBIND11_MODULE(pyQuiri, m) {
 
   // optional module docstring
@@ -33,8 +28,8 @@ PYBIND11_MODULE(pyQuiri, m) {
 
   // -------------------------------------------------------
   auto kdTree
-    = pybind11::class_<pyq::KDTree,
-                       std::shared_ptr<pyq::KDTree>>(m, "KDTree");
+    = py::class_<pyq::KDTree,
+                 std::shared_ptr<pyq::KDTree>>(m, "KDTree");
   kdTree.doc() = "tree that can store and query k-dimensional point/value data";
   
   kdTree.def
@@ -49,5 +44,9 @@ PYBIND11_MODULE(pyQuiri, m) {
     ("find",
      &pyq::KDTree::find,
      "returns a list of all the elements with given coordinates.");
+  kdTree.def
+    ("findClosest",
+     &pyq::KDTree::findClosest,
+     "find closest data point(s), and return tuple [coords, (values)].");
   
 }
