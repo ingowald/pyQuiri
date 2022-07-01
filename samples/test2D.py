@@ -33,5 +33,14 @@ def main():
     print("########### Test query of a given box (key:value pairs):")
     for box in queryBoxes:
         print("all_points_in_range("+str(box)+") = "+str(tree.all_points_in_range(box[0],box[1])))
+    #
+    print("########### kNN queries:")
+    knnPoints=[(-10,-10),(20,20),(40,40)]
+    knnCounts=[1,3,10,50]
+    for k in knnCounts:
+        for queryPoint in knnPoints:
+            print(" --- for query at "+str(queryPoint)+", k = "+str(k))
+            print("  -> "+str(tree.knn(k,queryPoint)))
+            
     
 main()

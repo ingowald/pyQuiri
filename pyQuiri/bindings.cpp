@@ -56,5 +56,12 @@ PYBIND11_MODULE(pyQuiri, m) {
     ("all_points_in_range",
      &pyq::KDTree::allPointsInRange,
      "finds all points in given query range (ie, in a k-dimensional box).");
+  kdTree.def
+    ("knn",
+     &pyq::KDTree::kNN,
+     "find k-nearest neighbors (kNN) to a query point.",
+     py::arg("k"),
+     py::arg("query_point"),
+     py::arg("max_radius")=std::numeric_limits<double>::infinity());
   
 }

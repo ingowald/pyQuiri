@@ -16,6 +16,8 @@
 
 #include "pyQuiri/KDTree.h"
 #include <stack>
+#include <deque>
+#include <queue>
 
 namespace pyq {
 
@@ -31,10 +33,10 @@ namespace pyq {
       throw std::runtime_error("pyQuiri::KDTree hasn't been built yet (-> kdTree.build()).");
   }
 
-  /*! converts a std::valarray<double> to a Coords class, and verifies
+  /*! converts a std::vector<double> to a Coords class, and verifies
     that this has the same dimensionality of this tree - and
     throws an exception if thi sis not the case */
-  Coords KDTree::makeCheckCoords(const std::valarray<double> &_coords)
+  Coords KDTree::makeCheckCoords(const std::vector<double> &_coords)
   {
     if (_coords.size() != K)
       throw py::type_error
@@ -106,7 +108,7 @@ namespace pyq {
   /*! performs (exact) element search for the given coordinates and
     returns all elements (in un-specified order) that match these
     coordinates */
-  py::list KDTree::find(const std::valarray<double> &_coords)
+  py::list KDTree::find(const std::vector<double> &_coords)
   {
     verifyTreeIsBuilt();
     const Coords queryCoords = makeCheckCoords(_coords);
@@ -129,8 +131,8 @@ namespace pyq {
   }
     
   /*! returns a list with (only) the values value of all poitnts within given box */
-  py::list KDTree::allValuesInRange(const std::valarray<double> &_lower,
-                                    const std::valarray<double> &_upper)
+  py::list KDTree::allValuesInRange(const std::vector<double> &_lower,
+                                    const std::vector<double> &_upper)
   {
     if (objects.empty())
       return py::list{};
@@ -177,9 +179,9 @@ namespace pyq {
 
 
   /*! returns a list with (only) the values value of all poitnts within given box */
-  std::vector<std::pair<std::valarray<double>,py::object>> 
-  KDTree::allPointsInRange(const std::valarray<double> &_lower,
-                                    const std::valarray<double> &_upper)
+  std::vector<std::pair<std::vector<double>,py::object>> 
+  KDTree::allPointsInRange(const std::vector<double> &_lower,
+                           const std::vector<double> &_upper)
   {
     if (objects.empty())
       return {};//py::list{};
@@ -189,7 +191,7 @@ namespace pyq {
                  makeCheckCoords(_upper));
     // std::vector<py::object> result;
     // py::list result;
-    std::vector<std::pair<std::valarray<double>,py::object>> result;
+    std::vector<std::pair<std::vector<double>,py::object>> result;
     
     std::stack<std::pair<Box,Node::SP>> nodeStack;
     nodeStack.push({Box::infinite(K),root});
@@ -207,12 +209,6 @@ namespace pyq {
       const Coords &nodeCoords = this->coords[node->items[0]];
       if (overlaps(queryBox,nodeCoords))
         for (auto item : node->items) {
-          // std::vector<py::list> thisPoint;
-          // py::list thisPoint;
-          // thisPoint.append(this->coords[item]);
-          // thisPoint.append(py::cast<py::tuple>(this->objects[item]));
-          // thisPoint.push_back(py::cast<py::tuple>(this->objects[item]));
-          // result.append(py::cast<py::tuple>(thisPoint));
           result.push_back({nodeCoords.coords,this->objects[item]});
         }
 
@@ -237,12 +233,12 @@ namespace pyq {
     tuple [ point, (values) ]; the 'values' is a *list* of all the
     values that share that data point (ie, it is always a list even if
     the input data set did not contain any duplicates) */
-  std::tuple<std::valarray<double>,py::list>
-  KDTree::findClosest(const std::valarray<double> &_coords,
+  std::tuple<std::vector<double>,py::list>
+  KDTree::findClosest(const std::vector<double> &_coords,
                       const py::kwargs &kwargs)
   {
     if (objects.empty())
-      return std::tuple<std::valarray<double>,py::list>();
+      return std::tuple<std::vector<double>,py::list>();
     
     verifyTreeIsBuilt();
     const Coords queryCoords = makeCheckCoords(_coords);
@@ -278,18 +274,115 @@ namespace pyq {
     }
     
     if (!closestNode)
-      return std::tuple<std::valarray<double>,py::list>();
+      return std::tuple<std::vector<double>,py::list>();
     
     const Coords &foundCoords = this->coords[closestNode->items[0]];
     py::list values;
     for (auto item : closestNode->items)
       values.append(this->objects[item]);
     
-    return std::tuple<std::valarray<double>,py::list>(foundCoords.coords,values);
+    return std::tuple<std::vector<double>,py::list>(foundCoords.coords,values);
+  }
+
+  /*! find k-nearest neighbors (kNN) to a query point */
+  std::vector<std::tuple<std::vector<double>,py::object>>
+  KDTree::kNN(int k,
+              const std::vector<double> &_coords,
+              double initMaxRadius)
+  {
+    if (objects.empty())
+      return {};
+    
+    verifyTreeIsBuilt();
+    const Coords queryPoint = makeCheckCoords(_coords);
+
+    /* the list of current candidates at any point during traversal -
+       will get updated with new nodes as they get found (possibly
+       evicting other ones). Careful: nodes can contain more than one
+       data point, so we need to separately track how many values we
+       have in there */
+    std::priority_queue<std::pair<double,Node::SP>> currentCandidateNodes;
+    int    numValuesInCandidates = 0;
+    double currentMaxRadius = initMaxRadius;
+
+    /* the node(s) we still need to check for additional candidates */
+    std::stack<std::pair<Box,Node::SP>> nodeStack;
+    nodeStack.push({Box::infinite(K),root});
+    while (!nodeStack.empty()) {
+      // pop latest from stack
+      Box subtreeBounds = nodeStack.top().first;
+      Node::SP node  = nodeStack.top().second;
+      nodeStack.pop();
+
+      const double distToSubtree
+        = distance(subtreeBounds,queryPoint);
+      if (distToSubtree >= currentMaxRadius)
+        // cull if entire subtree already out of range
+        continue;
+
+      // process node itself
+      const Coords &nodeCoords = this->coords[node->items[0]];
+      const double distToPoint = distance(nodeCoords,queryPoint);
+      if (distToPoint <= currentMaxRadius) {
+        // first, add this point, with all its values
+        currentCandidateNodes.push({distToPoint,node});
+        numValuesInCandidates += node->items.size();
+        while (true) {
+          const int numValuesInFurthestCandidate
+            = currentCandidateNodes.top().second->items.size();
+          if (numValuesInCandidates-numValuesInFurthestCandidate >= k) {
+            /*! even if we drop the furthest one, we'd still have enough! */
+            numValuesInCandidates -= numValuesInFurthestCandidate;
+            currentCandidateNodes.pop();
+            continue;
+          }
+          break;
+        }
+        if (numValuesInCandidates >= k)
+          currentMaxRadius = currentCandidateNodes.top().first;
+      }
+
+      // push children
+      if (node->lChild) {
+        Box childBounds = subtreeBounds;
+        childBounds.upper[node->splitDim] = nodeCoords[node->splitDim];
+        const double dist = distance(childBounds,queryPoint);
+        if (dist <= currentMaxRadius)
+          nodeStack.push({childBounds,node->lChild});
+      }
+      if (node->rChild) {
+        Box childBounds = subtreeBounds;
+        childBounds.lower[node->splitDim] = nodeCoords[node->splitDim];
+        const double dist = distance(childBounds,queryPoint);
+        if (dist <= currentMaxRadius)
+          nodeStack.push({childBounds,node->rChild});
+      }
+    }
+
+    std::vector<int> finalCandidates;
+    while (!currentCandidateNodes.empty()) {
+      for (auto item : currentCandidateNodes.top().second->items)
+        finalCandidates.push_back(item);
+      currentCandidateNodes.pop();
+    }
+    // reverse the list, so we'll report result sorted by distance, closest comes first
+    for (int i=0;i<finalCandidates.size()/2;i++)
+      std::swap(finalCandidates[i],finalCandidates[finalCandidates.size()-1-i]);
+
+    std::vector<std::tuple<std::vector<double>,py::object>> result;
+    for (auto item : finalCandidates) {
+      double dist = distance(this->coords[item],queryPoint);
+      std::tuple<std::vector<double>,py::object> entry
+        (this->coords[item].coords,
+         this->objects[item]);
+      result.push_back(entry);
+    }
+    
+    return result;    
   }
 
   /*! add a new element to this kdtree */
-  void KDTree::add(const std::valarray<double> &coords,
+  void KDTree::add(const std::vector<double> &coords,
                    const py::object    &object)
   {
     if (coords.size() != K)
