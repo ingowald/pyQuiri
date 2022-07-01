@@ -79,7 +79,7 @@ jobs:
           mkdir build
           cd build
           $CMAKEEXEC -DPYTHON_EXECUTABLE=$PYEXEC -DPYBIND11_PYTHON_VERSION=$PY ..
-          $CMAKEEXEC --build .
+          cmake --build . --config Release --target install
           cd ..
           
           # now make the bdistwheel
@@ -101,8 +101,23 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           pip install --upgrade setuptools setuptools_scm wheel 
-          python setup.py bdist_wheel
-      
+
+          PY=${{ matrix.python-version }}
+          [[ ${PY:2:1} < 8 ]] && M=m || M=""
+          PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
+          PYEXEC=/opt/python/${PYVER}/bin/python
+          CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
+          
+          mkdir build
+          cd build
+          cmake -DPYTHON_EXECUTABLE=$PYEXEC -DPYBIND11_PYTHON_VERSION=$PY ..
+          cmake --build . --config Release --target install
+          cd ..
+          
+          # now make the bdistwheel
+          $PYEXEC setup.py bdist_wheel 
+          cd dist
+          
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
         with:

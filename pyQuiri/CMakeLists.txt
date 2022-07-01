@@ -27,3 +27,6 @@ pybind11_add_module(pyQuiri
   )
 target_include_directories(pyQuiri PUBLIC ${PROJECT_SOURCE_DIR})
 
+install(TARGETS pyQuiri
+  DESTINATION ${PROJECT_BINARY_DIR}/install)
+
