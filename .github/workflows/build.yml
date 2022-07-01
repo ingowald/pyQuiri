@@ -138,7 +138,7 @@ jobs:
           python-version: '3.9'
           architecture: 'x64'
       
-     - name: Build Docs
+      - name: Build Docs
         run: |
           echo Build Docs here
           python -m pip install sphinx sphinx_rtd_theme sphinx-git
