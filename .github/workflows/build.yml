@@ -78,7 +78,7 @@ jobs:
           
           mkdir build
           cd build
-          $CMAKEEXEC -DPYBIND11_PYTHON_VERSION=$PY ..
+          $CMAKEEXEC -DPYTHON_EXECUTABLE=$PYEXEC -DPYBIND11_PYTHON_VERSION=$PY ..
           $CMAKEEXEC --build .
           cd ..
           
