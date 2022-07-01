@@ -53,7 +53,7 @@ jobs:
           PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
           PYEXEC=/opt/python/${PYVER}/bin/python
           $PYEXEC -m pip install --upgrade pip
-          $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5 pybind11
+          $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5 
           
           # Install CMake
           $PYEXEC -m pip install cmake
@@ -100,7 +100,7 @@ jobs:
       - name: Windows Build
         if: runner.os == 'Windows'
         run: |
-          pip install --upgrade setuptools setuptools_scm wheel pybind11
+          pip install --upgrade setuptools setuptools_scm wheel 
           python setup.py bdist_wheel
       
       - name: Upload Artifacts
