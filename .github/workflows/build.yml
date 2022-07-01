@@ -60,10 +60,10 @@ jobs:
           CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
           $CMAKEEXEC --version          
           
-          yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
-          yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
+          # yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
+          # yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
           
-          source /opt/rh/devtoolset-8/enable
+          # source /opt/rh/devtoolset-8/enable
       
       - name: Linux Build
         if: runner.os == 'Linux'
