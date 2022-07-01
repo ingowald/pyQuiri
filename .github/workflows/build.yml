@@ -70,12 +70,17 @@ jobs:
         shell: bash
         run: |
           #source /opt/rh/devtoolset-8/enable
-          
+
           PY=${{ matrix.python-version }}
           [[ ${PY:2:1} < 8 ]] && M=m || M=""
           PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
           PYEXEC=/opt/python/${PYVER}/bin/python
           
+	  mkdir build
+	  $CMAKEEXEC ..
+	  $CMAKEEXEC --build .
+	  cd ..
+	  
           # now make the bdistwheel
           $PYEXEC setup.py bdist_wheel
           cd dist
