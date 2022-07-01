@@ -76,11 +76,11 @@ jobs:
           PYEXEC=/opt/python/${PYVER}/bin/python
           CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
           
-	  mkdir build
-	  $CMAKEEXEC ..
-	  $CMAKEEXEC --build .
-	  cd ..
-	  
+          mkdir build
+          $CMAKEEXEC ..
+          $CMAKEEXEC --build .
+          cd ..
+          
           # now make the bdistwheel
           $PYEXEC setup.py bdist_wheel
           cd dist
