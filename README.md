@@ -82,9 +82,11 @@ To do that, you have to have a set of python tools installed, which you
 can do via:
 
 ``` bash
-sudo python3 -m pip install --upgrade testresources pip setuptools wheel
-sudo python3 -m pip install tqdm
-sudo python3 -m pip install --user --upgrade twine
+python3 -m pip install --upgrade testresources pip setuptools wheel
+python3 -m pip install pybind11
+python3 -m pip install tqdm
+python3 -m pip install --upgrade twine
+python3 -m pip install --upgrade importlib_metadata
 ```
 
 Once those tools are available on your machines (I assume you have a C++ compiler etc)

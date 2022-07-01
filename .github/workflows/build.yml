@@ -1,0 +1,194 @@
+# Unified workflow for building, building docs, and conditionally deploying to PyPI
+name: CI
+
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  
+  # Triggers the workflow for when a new release is tagged (This will enable also deploying to PyPI)
+  release:
+    types: [ created ]
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # This workflow always begins with a build on all supported platforms, defined by the matrix
+  build:
+    name: ${{ matrix.pretty }} - Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, windows-2019]
+        python-version: ['3.6', '3.7', '3.8', '3.9']
+        include:
+          # Includes the value for matrix.container when the OS is Ubuntu, to use manylinux complaint CentOS version.
+          # For Windows, matrix.container remains undefined and the build runs on the host VM instead of within a container.
+          - os: ubuntu-20.04
+            container: 'quay.io/pypa/manylinux2014_x86_64:2021-01-12-c8250d8'
+            pretty: 'Linux'
+          - os: windows-2019
+            pretty: 'Windows'
+    
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        # setuptools_scm requires history, so all commits are fetched by setting 0
+        with:
+          fetch-depth: 0
+      
+      - name: Linux Dependencies (Python)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # Install Python Dependencies
+          PY=${{ matrix.python-version }}
+          [[ ${PY:2:1} < 8 ]] && M=m || M=""
+          PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
+          PYEXEC=/opt/python/${PYVER}/bin/python
+          $PYEXEC -m pip install --upgrade pip
+          $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5
+          
+          # Install CMake
+          $PYEXEC -m pip install cmake
+          CMAKEEXEC=/opt/python/${PYVER}/bin/cmake 
+          $CMAKEEXEC --version          
+          
+          #yum -y erase devtoolset-9-binutils devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran 
+          #yum -y install devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-gcc-c++
+          
+          #source /opt/rh/devtoolset-8/enable
+      
+      - name: Linux Build
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          source /opt/rh/devtoolset-8/enable
+          
+          PY=${{ matrix.python-version }}
+          [[ ${PY:2:1} < 8 ]] && M=m || M=""
+          PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
+          PYEXEC=/opt/python/${PYVER}/bin/python
+          
+          # now make the bdistwheel
+          $PYEXEC setup.py bdist_wheel
+          cd dist
+          
+          # audit the bdistwheel for use on all linux distros
+          # and use the same dir for both .py and .so files
+          auditwheel repair -L "" *.whl  
+      
+      # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
+      - name: Configure Python on Windows
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Windows Build
+        if: runner.os == 'Windows'
+        run: |
+          pip install --upgrade setuptools setuptools_scm wheel 
+          python setup.py bdist_wheel
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: pyQuiri-${{ matrix.os }}-python${{ matrix.python-version }}
+          path: install/dist/*.whl
+  
+  docs:
+    needs: build
+    runs-on: ubuntu-20.04
+    # Only build/commit new docs if this is an update to master (ignore runs triggered within pull request)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      
+      - uses: actions/download-artifact@v2
+        with:
+          name: pyQuiri-ubuntu-20.04-python3.9
+      
+      - name: Switch to gh-pages branch and merge in latest master
+        run: |
+          # tmate for debugging
+          #sleep 120
+          #echo hello
+          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
+          #cd tmate-2.4.0-static-linux-amd64
+          #./tmate -F
+          #cd ..
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git checkout gh-pages
+          git merge master
+      
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+          architecture: 'x64'
+      
+      - name: Build Docs
+        run: |
+          echo Build Docs here
+          python -m pip install sphinx sphinx_rtd_theme sphinx-git
+          python -m pip install pyQuiri*.whl
+      
+      #- name: Display structure of built files
+      #  run: |
+      #    ls -R
+        
+      # Upload to gh-pages branch
+      - name: Push html pages to gh-pages branch
+        run: |
+          rm -rf ./docs/_sources/
+          rm -rf ./docs/_static/
+          mv ./docs/build/html/* ./docs/
+          touch ./docs/.nojekyll
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add ./docs/
+          git commit -m "Update docs from master"
+          git push origin gh-pages
+      
+  deploy:
+    needs: build
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+      
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      
+      - name: Install Dependencies (twine)
+        run: |
+          ls -R  # Show all downloaded artifacts
+          python -m pip install --upgrade pip
+          python -m pip install twine
+      
+      - name: Upload to test pypi
+        env:
+          TWINE_USERNAME: '__token__'
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ */*.whl
+      - name: Upload to pypi
+        if: success() && !github.event.release.prerelease
+        env:
+          TWINE_USERNAME: '__token__'
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          twine upload */*.whl
