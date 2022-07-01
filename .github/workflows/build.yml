@@ -80,12 +80,12 @@ jobs:
           
           mkdir build
           cd build
-          $CMAKEEXEC ..
+          $CMAKEEXEC -DPYBIND11_PYTHON_VERSION=${{PY}} ..
           $CMAKEEXEC --build .
           cd ..
           
           # now make the bdistwheel
-          $PYEXEC setup.py bdist_wheel
+          $PYEXEC setup.py bdist_wheel 
           cd dist
           
           # audit the bdistwheel for use on all linux distros
