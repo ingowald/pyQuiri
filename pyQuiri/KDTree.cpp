@@ -108,19 +108,19 @@ namespace pyq {
   /*! performs (exact) element search for the given coordinates and
     returns all elements (in un-specified order) that match these
     coordinates */
-  py::list KDTree::find(const std::vector<double> &_coords)
+  std::vector<py::object> KDTree::find(const std::vector<double> &_coords)
   {
     verifyTreeIsBuilt();
     const Coords queryCoords = makeCheckCoords(_coords);
     
-    py::list result;
-
+    std::vector<py::object> result;
+    
     Node::SP node = root;
     while (node) {
       const Coords &nodeCoords = this->coords[node->items[0]];
       if (nodeCoords == queryCoords) {
         for (auto item : node->items)
-          result.append(objects[item]);
+          result.push_back(objects[item]);
         return result;
       } else if (queryCoords[node->splitDim] < nodeCoords[node->splitDim])
         node = node->lChild;
@@ -131,18 +131,18 @@ namespace pyq {
   }
     
   /*! returns a list with (only) the values value of all poitnts within given box */
-  py::list KDTree::allValuesInRange(const std::vector<double> &_lower,
-                                    const std::vector<double> &_upper)
+  std::vector<py::object>
+  KDTree::allValuesInRange(const std::vector<double> &_lower,
+                           const std::vector<double> &_upper)
   {
     if (objects.empty())
-      return py::list{};
+      return {};
     
     verifyTreeIsBuilt();
     Box queryBox(makeCheckCoords(_lower),
                  makeCheckCoords(_upper));
-    // std::vector<py::object> result;
-    py::list result;
     
+    std::vector<py::object> result;
     std::stack<std::pair<Box,Node::SP>> nodeStack;
     nodeStack.push({Box::infinite(K),root});
     while (!nodeStack.empty()) {
@@ -159,7 +159,7 @@ namespace pyq {
       const Coords &nodeCoords = this->coords[node->items[0]];
       if (overlaps(queryBox,nodeCoords))
         for (auto item : node->items)
-          result.append(this->objects[item]);
+          result.push_back(this->objects[item]);
 
       // push children
       if (node->lChild) {

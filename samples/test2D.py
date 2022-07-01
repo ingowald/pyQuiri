@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import pyQuiri as piq
+import pyQuiri as pyq
 import csv
 
 def main():
-    tree = piq.kd_tree(2)
+    tree = pyq.kd_tree(2)
     dataPoints = ([])
     # this is a test data set in CSV format: "country, capital, lon, lat"
     with open('../samples/testData2D.csv', newline='') as csvfile:
@@ -41,6 +41,6 @@ def main():
         for queryPoint in knnPoints:
             print(" --- for query at "+str(queryPoint)+", k = "+str(k))
             print("  -> "+str(tree.knn(k,queryPoint)))
-            
+    #print(pyq.__doc__)
     
 main()

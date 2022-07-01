@@ -36,22 +36,23 @@ namespace pyq {
              const py::object    &object);
     
     /*! performs (exact) element search for the given coordinates and
-        returns all elemnets (in un-specified order) that match these
-        coordinates */
-    py::list find(const std::vector<double> &coords);
+      returns all elemnets (in un-specified order) that match these
+      coordinates */
+    std::vector<py::object> find(const std::vector<double> &coords);
 
     /*! finds the closest data point to given query point, and returns
-        a tuple [ point, (values) ]; the 'values' is a *list* of all
-        the values that share that data point (ie, it is always a list
-        even if the input data set did not contain any duplicates) */
+      a tuple [ point, (values) ]; the 'values' is a *list* of all
+      the values that share that data point (ie, it is always a list
+      even if the input data set did not contain any duplicates) */
     std::tuple<std::vector<double>,py::list>
     //    py::tuple
     findClosest(const std::vector<double> &coords, const py::kwargs &kwargs);
 
     /*! returns a list with all key:value pairs with the given point and radius */
-    py::list all_points_in_radius(const std::vector<double> &coords,
-                                  double radius);
-
+    std::vector<std::tuple<std::vector<double>,py::object>>
+    all_points_in_radius(const std::vector<double> &coords,
+                         double radius);
+    
     /*! find k-nearest neighbors (kNN) to a query point */
     std::vector<std::tuple<std::vector<double>,py::object>>
     kNN(int k,
@@ -64,12 +65,14 @@ namespace pyq {
                      const std::vector<double> &upper);
     
     /*! returns a list with (only) the values value of all poitnts within given box */
-    py::list allValuesInRange(const std::vector<double> &lower,
-                              const std::vector<double> &upper);
-
-    /*! returns a list with (only) the values value of all poitnts within given radius */
-    py::list all_values_in_radius(const std::vector<double> &coords,
-                                        double radius);
+    std::vector<py::object>
+    allValuesInRange(const std::vector<double> &lower,
+                     const std::vector<double> &upper);
+    
+    // /*! returns a list with (only) the values value of all poitnts within given radius */
+    // std::vector<py::object>
+    // all_values_in_radius(const std::vector<double> &coords,
+    //                      double radius);
     
     /*! build kd-tree - MUST be done before querying anything */
     void build();
@@ -90,8 +93,8 @@ namespace pyq {
     void verifyTreeIsBuilt();
     
     /*! converts a std::vector<double> to a Coords class, and verifies
-        that this has the same dimensionality of this tree - and
-        throws an exception if thi sis not the case */
+      that this has the same dimensionality of this tree - and
+      throws an exception if thi sis not the case */
     Coords makeCheckCoords(const std::vector<double> &);
 
     /*! one entry per input data point, containing the coordinates of each data point */
