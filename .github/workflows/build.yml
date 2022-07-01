@@ -53,7 +53,7 @@ jobs:
           PYVER=cp${PY:0:1}${PY:2:1}-cp${PY:0:1}${PY:2:1}${M}
           PYEXEC=/opt/python/${PYVER}/bin/python
           $PYEXEC -m pip install --upgrade pip
-          $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5
+          $PYEXEC -m pip install setuptools setuptools_scm numpy==1.19.5 pybind11
           
           # Install CMake
           $PYEXEC -m pip install cmake
@@ -94,7 +94,7 @@ jobs:
       - name: Windows Build
         if: runner.os == 'Windows'
         run: |
-          pip install --upgrade setuptools setuptools_scm wheel 
+          pip install --upgrade setuptools setuptools_scm wheel pybind11
           python setup.py bdist_wheel
       
       - name: Upload Artifacts
@@ -138,7 +138,7 @@ jobs:
           python-version: '3.9'
           architecture: 'x64'
       
-      - name: Build Docs
+     - name: Build Docs
         run: |
           echo Build Docs here
           python -m pip install sphinx sphinx_rtd_theme sphinx-git
@@ -182,13 +182,13 @@ jobs:
       - name: Upload to test pypi
         env:
           TWINE_USERNAME: '__token__'
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TESTPYPI_UPLOAD }}
         run: |
           twine upload --repository-url https://test.pypi.org/legacy/ */*.whl
       - name: Upload to pypi
         if: success() && !github.event.release.prerelease
         env:
           TWINE_USERNAME: '__token__'
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.GITHUB_PYPI_UPLOAD }}
         run: |
           twine upload */*.whl
