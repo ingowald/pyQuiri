@@ -2,11 +2,11 @@
 name: CI
 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   
   # Triggers the workflow for when a new release is tagged (This will enable also deploying to PyPI)
   release:
@@ -106,8 +106,8 @@ jobs:
   docs:
     needs: build
     runs-on: ubuntu-20.04
-    # Only build/commit new docs if this is an update to master (ignore runs triggered within pull request)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Only build/commit new docs if this is an update to main (ignore runs triggered within pull request)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v2
         with:
@@ -117,7 +117,7 @@ jobs:
         with:
           name: pyQuiri-ubuntu-20.04-python3.9
       
-      - name: Switch to gh-pages branch and merge in latest master
+      - name: Switch to gh-pages branch and merge in latest main
         run: |
           # tmate for debugging
           #sleep 120
@@ -130,7 +130,7 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           git checkout gh-pages
-          git merge master
+          git merge main
       
       - name: Setup Python 3.9
         uses: actions/setup-python@v2
@@ -158,7 +158,7 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add ./docs/
-          git commit -m "Update docs from master"
+          git commit -m "Update docs from main"
           git push origin gh-pages
       
   deploy:
