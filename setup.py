@@ -39,7 +39,7 @@ setup(
     install_requires = [],
 
     #packages = ['pyQuiri'],
-    packages = ['build/install/'],
+    packages = ['build/install'],
 
     # make sure the shared library is included
     package_data = {'': ("*.dll", "*.pyd", "*.so")},
