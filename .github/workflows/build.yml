@@ -1,4 +1,4 @@
-# Unified workflow for building, building docs, and conditionally deploying to PyPI
+# Unified workflow for building and conditionally deploying to PyPI
 name: CI
 
 on:
@@ -117,64 +117,6 @@ jobs:
         with:
           name: pyQuiri-${{ matrix.os }}-python${{ matrix.python-version }}
           path: dist/*.whl
-  
-  docs:
-    needs: build
-    runs-on: ubuntu-20.04
-    # Only build/commit new docs if this is an update to main (ignore runs triggered within pull request)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      
-      - uses: actions/download-artifact@v2
-        with:
-          name: pyQuiri-ubuntu-20.04-python3.9
-      
-      - name: Switch to gh-pages branch and merge in latest main
-        run: |
-          # tmate for debugging
-          #sleep 120
-          #echo hello
-          #wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-          #tar xf tmate-2.4.0-static-linux-amd64.tar.xz
-          #cd tmate-2.4.0-static-linux-amd64
-          #./tmate -F
-          #cd ..
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git checkout gh-pages
-          git merge main
-      
-      - name: Setup Python 3.9
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-          architecture: 'x64'
-      
-      - name: Build Docs
-        run: |
-          echo Build Docs here
-          python -m pip install sphinx sphinx_rtd_theme sphinx-git
-          python -m pip install pyQuiri*.whl
-      
-      #- name: Display structure of built files
-      #  run: |
-      #    ls -R
-        
-      # Upload to gh-pages branch
-      - name: Push html pages to gh-pages branch
-        run: |
-          rm -rf ./docs/_sources/
-          rm -rf ./docs/_static/
-          mv ./docs/build/html/* ./docs/
-          touch ./docs/.nojekyll
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add ./docs/
-          git commit -m "Update docs from main"
-          git push origin gh-pages
       
   deploy:
     needs: build
