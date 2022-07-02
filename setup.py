@@ -22,13 +22,12 @@ class BinaryDistribution(dist.Distribution):
 
 # This gets the version from the most recent git tag, potentially concatinating 
 # a commit hash at the end.
-#current_version = get_version(
+# current_version = get_version(
 #    root = "..", 
 #    relative_to = __file__,
 #    fallback_version='0.0.0-dev0'
 #)
-
-print(current_version)
+# print(current_version)
 
 __version__ = "0.1.2"
 
