@@ -52,7 +52,7 @@ setup(
     distclass=BinaryDistribution,
 
     # version = current_version,
-    version = __version__
+    version = __version__,
 
     author='Ingo Wald',
     author_email='',
