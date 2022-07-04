@@ -157,13 +157,13 @@ jobs:
       - name: Upload to test pypi
         env:
           TWINE_USERNAME: '__token__'
-          TWINE_PASSWORD: ${{ secrets.GITHUB_TESTPYPI_UPLOAD }}
+          TWINE_PASSWORD: ${{ secrets.PYQUIRI_TESTPYPI }}
         run: |
           twine upload --repository-url https://test.pypi.org/legacy/ */*.whl 
       - name: Upload to pypi
         if: success() && !github.event.release.prerelease
         env:
           TWINE_USERNAME: '__token__'
-          TWINE_PASSWORD: ${{ secrets.GITHUB_PYPI_UPLOAD }}
+          TWINE_PASSWORD: ${{ secrets.PYQUIRI_PYPI }}
         run: |
           twine upload */*.whl
