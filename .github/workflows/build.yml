@@ -84,7 +84,7 @@ jobs:
           cd build
           echo "Building for Linux, via cmake"
           $CMAKEEXEC -DPYTHON_EXECUTABLE=$PYEXEC -DPYBIND11_PYTHON_VERSION=$PY ..
-          cmake --build . --config Release --target install
+          $CMAKEEXEC --build . --config Release --target install
           cd ..
           
           # now make the bdistwheel
@@ -93,25 +93,20 @@ jobs:
           
           # audit the bdistwheel for use on all linux distros
           # and use the same dir for both .py and .so files
-          auditwheel repair -L "" *.whl
+	  WHEELNAME=$(ls -1 *whl)
+	  echo "wheel name is ${WHEELNAME}"
+          auditwheel repair -L "" ${WHEELNAME}
+	  echo "outputs in wheelhouse/"
+	  ls .
+	  ls wheelhouse/
           
           # add back on the libcuda.so.1 to the library
           cd wheelhouse
-          unar -d *.whl
-          cd pyQuiri*
-          cd pyQuiri
-          # patchelf --add-needed libcuda.so.1 _pyQuiri.so
-          # list libraries for manual verification
-          # ldd _pyQuiri.so
-          cd ..
-          cd ..
-          rm *.whl
-          NAME=$(ls -1 .)
-          cd ${NAME}
-          zip -r ../${NAME}.whl ./*
-          # move the modified manylinux wheel to the "install/dist" folder to be uploaded
-          rm ../../*.whl
-          cp ../*.whl ../../
+	  NEWWHEELNAME=$(ls *whl)
+	  echo "NEWWHEELNAME ${NEWWHEELNAME}"
+	  cp ${NEWWHEELNAME} ..
+	  cd ..
+	  rm ${WHEELNAME}
       
       # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
       - name: Configure Python on Windows
