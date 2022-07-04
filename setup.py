@@ -29,7 +29,7 @@ class BinaryDistribution(dist.Distribution):
 #)
 # print(current_version)
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"
 
 setup(
     # This package is called pyQuiri

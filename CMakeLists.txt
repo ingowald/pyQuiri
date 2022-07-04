@@ -15,7 +15,7 @@
 # ======================================================================== #
 
 cmake_minimum_required(VERSION 3.4...3.18)
-project(example LANGUAGES CXX)
+project(example LANGUAGES CXX VERSION 0.2.0)
 
 if(NOT SET_UP_CONFIGURATIONS_DONE)
   set(SET_UP_CONFIGURATIONS_DONE 1)
