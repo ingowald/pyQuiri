@@ -89,7 +89,26 @@ jobs:
           
           # audit the bdistwheel for use on all linux distros
           # and use the same dir for both .py and .so files
-          auditwheel repair -L "" *.whl  
+          auditwheel repair -L "" *.whl
+          
+          # add back on the libcuda.so.1 to the library
+          cd wheelhouse
+          unar -d *.whl
+          cd pyQuiri*
+          cd pyQuiri
+          # patchelf --add-needed libcuda.so.1 _pyQuiri.so
+          # list libraries for manual verification
+          # ldd _pyQuiri.so
+          cd ..
+          cd ..
+          rm *.whl
+          NAME=$(ls -1 .)
+          cd ${NAME}
+          zip -r ../${NAME}.whl ./*
+          # move the modified manylinux wheel to the "install/dist" folder to be uploaded
+          rm ../../*.whl
+          cp ../*.whl ../../
+	  
       
       # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
       - name: Configure Python on Windows
@@ -142,7 +161,7 @@ jobs:
           TWINE_USERNAME: '__token__'
           TWINE_PASSWORD: ${{ secrets.GITHUB_TESTPYPI_UPLOAD }}
         run: |
-          twine upload --repository-url https://test.pypi.org/legacy/ */*.whl
+          twine upload --repository-url https://test.pypi.org/legacy/ */*.whl 
       - name: Upload to pypi
         if: success() && !github.event.release.prerelease
         env:
