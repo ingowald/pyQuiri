@@ -93,20 +93,20 @@ jobs:
           
           # audit the bdistwheel for use on all linux distros
           # and use the same dir for both .py and .so files
-	  WHEELNAME=$(ls -1 *whl)
-	  echo "wheel name is ${WHEELNAME}"
+          WHEELNAME=$(ls -1 *whl)
+          echo "wheel name is ${WHEELNAME}"
           auditwheel repair -L "" ${WHEELNAME}
-	  echo "outputs in wheelhouse/"
-	  ls .
-	  ls wheelhouse/
+          echo "outputs in wheelhouse/"
+          ls .
+          ls wheelhouse/
           
           # add back on the libcuda.so.1 to the library
           cd wheelhouse
-	  NEWWHEELNAME=$(ls *whl)
-	  echo "NEWWHEELNAME ${NEWWHEELNAME}"
-	  cp ${NEWWHEELNAME} ..
-	  cd ..
-	  rm ${WHEELNAME}
+          NEWWHEELNAME=$(ls *whl)
+          echo "NEWWHEELNAME ${NEWWHEELNAME}"
+          cp ${NEWWHEELNAME} ..
+          cd ..
+          rm ${WHEELNAME}
       
       # Python configuration by github is only valid on their VMs (not inside the manylinux container), so only run on windows.
       - name: Configure Python on Windows
