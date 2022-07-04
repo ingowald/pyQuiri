@@ -78,6 +78,7 @@ jobs:
           
           mkdir build
           cd build
+          echo "Building for Linux"
           $CMAKEEXEC -DPYTHON_EXECUTABLE=$PYEXEC -DPYBIND11_PYTHON_VERSION=$PY ..
           cmake --build . --config Release --target install
           cd ..
