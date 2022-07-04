@@ -78,7 +78,7 @@ jobs:
           
           mkdir build
           cd build
-          echo "Building for Linux"
+          echo "Building for Linux, via cmake"
           $CMAKEEXEC -DPYTHON_EXECUTABLE=$PYEXEC -DPYBIND11_PYTHON_VERSION=$PY ..
           cmake --build . --config Release --target install
           cd ..
@@ -117,7 +117,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: pyQuiri-${{ matrix.os }}-python${{ matrix.python-version }}
-          path: dist/*.whl
+          path: dist/wheelhouse/*.whl
       
   deploy:
     needs: build
