@@ -136,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: pyQuiri-${{ matrix.os }}-python${{ matrix.python-version }}
-          path: dist/wheelhouse/*.whl
+          path: dist/*.whl
       
   deploy:
     needs: build
